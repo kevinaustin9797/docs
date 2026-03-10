@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Designing AR-Enhanced Lessons with CoSpaces Edu</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --teal:    #1A7F7A;
+      --teal-lt: #E6F4F3;
+      --gold:    #D4820A;
+      --gold-lt: #FFF5E6;
+      --ink:     #1C1C2B;
+      --mist:    #F4F6F8;
+      --white:   #FFFFFF;
+      --radius:  12px;
+      --shadow:  0 4px 24px rgba(0,0,0,0.08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--mist);
+      color: var(--ink);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    /* ── HERO ─────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #0f4c48 0%, #1A7F7A 60%, #23a99f 100%);
+      color: var(--white);
+      padding: 60px 24px 50px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: "";
+      position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 100px;
+      padding: 5px 18px;
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(26px, 5vw, 42px);
+      line-height: 1.2;
+      max-width: 700px;
+      margin: 0 auto 16px;
+    }
+    header p {
+      opacity: .85;
+      max-width: 560px;
+      margin: 0 auto 28px;
+      font-size: 17px;
+    }
+    .obj-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 100px;
+      padding: 10px 22px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .obj-pill span { font-size: 18px; }
+
+    /* ── PROGRESS BAR ─────────────────────── */
+    #progress-bar-wrap {
+      background: var(--white);
+      border-bottom: 1px solid #e2e8f0;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    #progress-bar-wrap span { font-size: 13px; color: #666; white-space: nowrap; }
+    .bar-outer {
+      flex: 1;
+      background: #e2e8f0;
+      border-radius: 100px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .bar-inner {
+      background: linear-gradient(90deg, var(--teal), #23c9c2);
+      height: 100%;
+      border-radius: 100px;
+      width: 0%;
+      transition: width .5s ease;
+    }
+    #step-count { font-weight: 600; color: var(--teal); }
+
+    /* ── LAYOUT ───────────────────────────── */
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+
+    /* ── SECTION CARDS ────────────────────── */
+    .section {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 32px;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity .5s ease, transform .5s ease;
+    }
+    .section.visible { opacity: 1; transform: none; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 22px 28px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .section-icon {
+      width: 42px; height: 42px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .icon-teal  { background: var(--teal-lt); }
+    .icon-gold  { background: var(--gold-lt); }
+    .icon-purple{ background: #f0eeff; }
+    .icon-green { background: #eafaf1; }
+
+    .section-header h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20px;
+      font-weight: 400;
+    }
+    .section-body { padding: 28px; }
+
+    /* ── INFO GRID ────────────────────────── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .info-card {
+      background: var(--mist);
+      border-radius: 10px;
+      padding: 18px;
+      border-left: 4px solid var(--teal);
+    }
+    .info-card h4 { font-size: 14px; font-weight: 600; color: var(--teal); margin-bottom: 6px; }
+    .info-card p  { font-size: 14px; color: #555; }
+
+    /* ── PRINCIPLES ───────────────────────── */
+    .principle-list { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; }
+    .principle {
+      display: flex;
+      gap: 16px;
+      padding: 18px 20px;
+      background: var(--mist);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background .2s;
+      position: relative;
+    }
+    .principle:hover { background: var(--teal-lt); }
+    .principle-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 26px;
+      color: var(--teal);
+      line-height: 1;
+      min-width: 32px;
+    }
+    .principle h4 { font-weight: 600; margin-bottom: 4px; }
+    .principle p  { font-size: 14px; color: #555; }
+    .principle .expand-detail {
+      display: none;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #444;
+      background: var(--white);
+      border-radius: 8px;
+      padding: 12px;
+      border-left: 3px solid var(--gold);
+    }
+    .principle.open .expand-detail { display: block; }
+    .principle .toggle-arrow {
+      position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+      font-size: 18px; color: #aaa; transition: transform .2s;
+    }
+    .principle.open .toggle-arrow { transform: translateY(-50%) rotate(90deg); }
+
+    /* ── SCENARIO QUIZ ────────────────────── */
+    .scenario-box {
+      background: linear-gradient(135deg, #0f4c48, #1A7F7A);
+      border-radius: 12px;
+      padding: 24px;
+      color: var(--white);
+      margin-bottom: 20px;
+    }
+    .scenario-box .scenario-label {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      opacity: .7;
+      margin-bottom: 8px;
+    }
+    .scenario-box p { font-size: 16px; line-height: 1.6; }
+
+    .choices { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+    .choice-btn {
+      background: var(--mist);
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 18px;
+      text-align: left;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      transition: all .2s;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .choice-btn:hover { border-color: var(--teal); background: var(--teal-lt); }
+    .choice-btn.correct { border-color: #16a34a; background: #f0fdf4; color: #15803d; }
+    .choice-btn.wrong   { border-color: #dc2626; background: #fef2f2; color: #b91c1c; }
+    .choice-btn.disabled { pointer-events: none; opacity: .6; }
+    .choice-letter {
+      font-weight: 700;
+      min-width: 24px;
+      color: var(--teal);
+    }
+    .feedback-msg {
+      margin-top: 16px;
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-size: 15px;
+      display: none;
+    }
+    .feedback-msg.show { display: block; }
+    .feedback-msg.correct { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
+    .feedback-msg.wrong   { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
+
+    .quiz-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+    .btn {
+      background: var(--teal);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      padding: 11px 24px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+    }
+    .btn:hover { background: #155e5a; }
+    .btn:active { transform: scale(.97); }
+    .btn:disabled { background: #ccc; cursor: not-allowed; }
+    .btn-ghost {
+      background: transparent;
+      border: 2px solid var(--teal);
+      color: var(--teal);
+    }
+    .btn-ghost:hover { background: var(--teal-lt); }
+
+    #quiz-score { font-weight: 600; color: #666; font-size: 14px; }
+
+    /* ── STEPS ────────────────────────────── */
+    .steps { counter-reset: step; display: flex; flex-direction: column; gap: 0; }
+    .step {
+      display: flex;
+      gap: 0;
+      position: relative;
+    }
+    .step:not(:last-child)::before {
+      content: "";
+      position: absolute;
+      left: 20px;
+      top: 42px;
+      bottom: 0;
+      width: 2px;
+      background: #e2e8f0;
+    }
+    .step-left { display: flex; flex-direction: column; align-items: center; margin-right: 20px; }
+    .step-num {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--teal);
+      color: var(--white);
+      font-weight: 700;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .step-content { padding-bottom: 28px; padding-top: 8px; }
+    .step-content h4 { font-weight: 600; margin-bottom: 4px; }
+    .step-content p  { font-size: 14px; color: #555; }
+
+    /* ── TOOL COMPARE ─────────────────────── */
+    .tool-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1px;
+      background: #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 20px;
+    }
+    .tool-cell {
+      background: var(--white);
+      padding: 16px;
+      font-size: 14px;
+    }
+    .tool-cell.header {
+      background: var(--ink);
+      color: var(--white);
+      font-weight: 600;
+      font-size: 13px;
+      text-align: center;
+    }
+    .tool-cell.winner { background: var(--teal-lt); font-weight: 600; color: var(--teal); }
+    .tool-cell:first-child { font-weight: 500; }
+
+    /* ── COMPLETION ───────────────────────── */
+    #completion {
+      display: none;
+      background: linear-gradient(135deg, #0f4c48, #1A7F7A);
+      border-radius: 16px;
+      padding: 48px 32px;
+      text-align: center;
+      color: var(--white);
+      margin-top: 32px;
+    }
+    #completion.show { display: block; }
+    #completion .trophy { font-size: 56px; margin-bottom: 16px; }
+    #completion h2 { font-family: 'DM Serif Display', serif; font-size: 30px; margin-bottom: 12px; }
+    #completion p  { opacity: .85; max-width: 500px; margin: 0 auto 24px; }
+    .cert-chip {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 100px;
+      padding: 8px 22px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* ── CITATION BOX ─────────────────────── */
+    .cite-box {
+      background: #f8f8fb;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 20px;
+    }
+    .cite-box p {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+    }
+    .cite-box p + p { margin-top: 6px; }
+
+    /* ── MEDIA ────────────────────────────── */
+    @media (max-width: 600px) {
+      .tool-row { grid-template-columns: 1fr; }
+      .info-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<header>
+  <div class="badge">Interactive Learning Object</div>
+  <h1>Designing AR-Enhanced Lessons with CoSpaces Edu</h1>
+  <p>A self-paced module for teacher candidates preparing to integrate augmented reality into K–12 instruction.</p>
+  <div class="obj-pill">
+    <span>🎯</span>
+    <strong>Learning Objective:</strong>&nbsp;Apply at least three instructional design principles to plan an AR-enhanced lesson using CoSpaces Edu.
+  </div>
+</header>
+
+<!-- PROGRESS BAR -->
+<div id="progress-bar-wrap">
+  <span>Progress</span>
+  <div class="bar-outer"><div class="bar-inner" id="bar"></div></div>
+  <span><span id="step-count">0</span> / 4 sections</span>
+</div>
+
+<main>
+
+  <!-- SECTION 1: WHAT IS COSPACES? -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-icon icon-teal">🥽</div>
+      <h2>What Is CoSpaces Edu?</h2>
+    </div>
+    <div class="section-body">
+      <p>CoSpaces Edu is a browser-based platform that lets teachers and students <strong>build their own augmented and virtual reality environments</strong> without specialized hardware. Using a drag-and-drop interface, teacher candidates can layer 3D objects, text, audio, and interactive scripts over printed materials or classroom objects — all viewable on a smartphone or tablet.</p>
+
+      <div class="info-grid">
+        <div class="info-card">
+          <h4>🌐 Browser-Based</h4>
+          <p>No downloads required. Runs on Chrome, Safari, and most modern browsers.</p>
+        </div>
+        <div class="info-card">
+          <h4>📱 Device Flexible</h4>
+          <p>AR experiences work on iOS and Android. VR mode supports Google Cardboard.</p>
+        </div>
+        <div class="info-card">
+          <h4>🏫 LMS-Friendly</h4>
+          <p>Scenes can be published and shared via link — easy to embed in Canvas or Blackboard.</p>
+        </div>
+        <div class="info-card">
+          <h4>💰 Free Tier Available</h4>
+          <p>Teachers get a free class license with up to 30 student accounts.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:24px; text-align:center;">
+        <button class="btn" onclick="markSection(1)">✔ I've read this section</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: WHY AR IN INSTRUCTION -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-icon icon-gold">📚</div>
+      <h2>Why AR Belongs in Your Classroom Toolkit</h2>
+    </div>
+    <div class="section-body">
+      <p>Research consistently links immersive, interactive learning environments to improved retention and learner confidence. When students engage <em>actively</em> — rather than passively reading or watching — they build deeper conceptual understanding (Elmqaddem, 2019). AR, in particular, bridges the gap between abstract content and tangible experience.</p>
+
+      <p style="margin-top:16px;">Click each principle below to learn how it applies to CoSpaces Edu lesson design.</p>
+
+      <div class="principle-list">
+        <div class="principle" onclick="togglePrinciple(this)">
+          <div class="principle-num">1</div>
+          <div>
+            <h4>Contextual Anchoring</h4>
+            <p>Layer digital content directly onto physical objects or locations.</p>
+            <div class="expand-detail">
+              <strong>In CoSpaces:</strong> Attach a 3D model of a cell to a printed textbook diagram. When students point their device at the page, the model appears in context — anchoring abstract biology concepts to a familiar physical reference.
+            </div>
+          </div>
+          <div class="toggle-arrow">›</div>
+        </div>
+
+        <div class="principle" onclick="togglePrinciple(this)">
+          <div class="principle-num">2</div>
+          <div>
+            <h4>Learner Agency</h4>
+            <p>Let students explore content at their own pace and path.</p>
+            <div class="expand-detail">
+              <strong>In CoSpaces:</strong> Program branching interactions using CoBlocks (a Scratch-like coding interface). Students can click on objects to reveal different historical perspectives, choose their own investigation path, or trigger audio narrations.
+            </div>
+          </div>
+          <div class="toggle-arrow">›</div>
+        </div>
+
+        <div class="principle" onclick="togglePrinciple(this)">
+          <div class="principle-num">3</div>
+          <div>
+            <h4>Multimodal Representation</h4>
+            <p>Deliver content through text, audio, 3D visuals, and interaction simultaneously.</p>
+            <div class="expand-detail">
+              <strong>In CoSpaces:</strong> Combine labeled 3D objects, embedded audio explanations, and clickable information panels in one scene. This supports multiple learning modalities and benefits students with diverse learning needs, including English learners and students with reading disabilities (Barroso-Osuna et al., 2019).
+            </div>
+          </div>
+          <div class="toggle-arrow">›</div>
+        </div>
+
+        <div class="principle" onclick="togglePrinciple(this)">
+          <div class="principle-num">4</div>
+          <div>
+            <h4>Formative Feedback</h4>
+            <p>Build in low-stakes checkpoints to reinforce understanding.</p>
+            <div class="expand-detail">
+              <strong>In CoSpaces:</strong> Use CoBlocks to create simple embedded quizzes or "unlock" sequences — a student must answer a question correctly before the next 3D object appears. This encourages active recall without the pressure of formal assessment.
+            </div>
+          </div>
+          <div class="toggle-arrow">›</div>
+        </div>
+      </div>
+
+      <div style="margin-top:24px; text-align:center;">
+        <button class="btn" onclick="markSection(2)">✔ I've explored all principles</button>
+      </div>
+
+      <div class="cite-box">
+        <p>Elmqaddem, N. (2019). Augmented reality and virtual reality in education: Myth or reality? <em>International Journal of Emerging Technologies in Learning (iJET)</em>, <em>14</em>(3), 234–242. https://doi.org/10.3991/ijet.v14i03.9289</p>
+        <p>Barroso-Osuna, J., Gutierrez-Castillo, J. J., Llorente-Cejudo, M. C., &amp; Valencia Ortiz, R. (2019). Difficulties in the incorporation of augmented reality in university education. <em>Journal of New Approaches in Educational Research</em>, <em>8</em>(2), 126–141. https://doi.org/10.7821/naer.2019.7.409</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: HOW TO BUILD A SCENE -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-icon icon-purple">🛠️</div>
+      <h2>Building Your First AR Scene: A 5-Step Workflow</h2>
+    </div>
+    <div class="section-body">
+      <p>Use this workflow when designing any CoSpaces Edu AR experience for your classroom. Each step maps to a core instructional design consideration.</p>
+
+      <div class="steps" style="margin-top:24px;">
+        <div class="step">
+          <div class="step-left"><div class="step-num">1</div></div>
+          <div class="step-content">
+            <h4>Identify the Anchor Trigger</h4>
+            <p>Choose the physical object (printed image, poster, worksheet) that will "trigger" your AR content. Keep it simple — high-contrast, flat images work best.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-left"><div class="step-num">2</div></div>
+          <div class="step-content">
+            <h4>Define One Clear Objective</h4>
+            <p>Limit each scene to one measurable learning goal. Cognitive overload is the most common design failure in AR experiences. One scene, one concept.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-left"><div class="step-num">3</div></div>
+          <div class="step-content">
+            <h4>Select Assets from the CoSpaces Library</h4>
+            <p>Use the built-in 3D asset library for characters, environments, and objects. Upload custom images or audio for subject-specific content (e.g., primary source documents for social studies).</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-left"><div class="step-num">4</div></div>
+          <div class="step-content">
+            <h4>Script Interactions with CoBlocks</h4>
+            <p>Add interactivity using CoBlocks — even beginners can program "on click" events that reveal information, play audio, or display quizzes. Aim for at least two learner interactions per scene.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-left"><div class="step-num">5</div></div>
+          <div class="step-content">
+            <h4>Test for Accessibility</h4>
+            <p>Preview on both iOS and Android. Ensure all audio has text alternatives. Confirm text is readable at arm's length. Check that interactive targets are large enough for diverse motor abilities.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:24px; text-align:center;">
+        <button class="btn" onclick="markSection(3)">✔ Workflow reviewed</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: SCENARIO QUIZ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-icon icon-green">🧠</div>
+      <h2>Scenario Check: Apply What You Know</h2>
+    </div>
+    <div class="section-body">
+      <p>Work through these three scenarios. Select the best instructional decision for each situation.</p>
+
+      <!-- Q1 -->
+      <div id="q1" class="quiz-block">
+        <div class="scenario-box">
+          <div class="scenario-label">Scenario 1 of 3</div>
+          <p>A teacher candidate wants to create a CoSpaces scene about the American Revolution for 5th graders. She plans to include 12 interactive objects, 3 audio clips, an embedded video, and a quiz — all in one scene. What should she reconsider?</p>
+        </div>
+        <div class="choices">
+          <button class="choice-btn" onclick="checkAnswer(this,'wrong','q1')"><span class="choice-letter">A</span> She should add even more objects to make the experience richer.</button>
+          <button class="choice-btn" onclick="checkAnswer(this,'correct','q1')"><span class="choice-letter">B</span> She should reduce scope to one focused objective and limit the number of objects to avoid cognitive overload.</button>
+          <button class="choice-btn" onclick="checkAnswer(this,'wrong','q1')"><span class="choice-letter">C</span> She should remove all audio to keep the scene simple.</button>
+          <button class="choice-btn" onclick="checkAnswer(this,'wrong','q1')"><span class="choice-letter">D</span> She should switch to a slide presentation instead.</button>
+        </div>
+        <div id="fb-q1" class="feedback-msg correct">✅ <strong>Correct!</strong> Cognitive overload is a leading design failure in AR. One scene, one objective keeps the experience focused and effective.</div>
+        <div id="fb-q1-wrong" class="feedback-msg wrong">❌ <strong>Not quite.</strong> More content in a single scene increases cognitive load, which research shows decreases retention. Simplify and focus on one core concept per scene.</div>
+        <div class="quiz-nav">
+          <span id="quiz-score">Question 1 of 3</span>
+          <button class="btn" id="next-q1" onclick="showQ(2)" disabled>Next →</button>
+        </div>
+      </div>
+
+      <!-- Q2 -->
+      <div id="q2" class="quiz-block" style="display:none;">
+        <div class="scenario-box">
+          <div class="scenario-label">Scenario 2 of 3</div>
+          <p>A teacher candidate's AR scene includes important vocabulary labels displayed in small, light-gray text on a white background. A student with low vision raises her hand because she cannot read the labels on her tablet. Which design principle was overlooked?</p>
+        </div>
+        <div class="choices">
+          <button class="choice-btn" onclick="checkAnswer(this,'wrong','q2')"><span class="choice-letter">A</span> Contextual anchoring — the trigger image was not placed correctly.</button>
+          <button class="choice-btn" onclick="checkAnswer(this,'wrong','q2')"><span class="choice-letter">B</span> Learner agency — students were not given choices.</button>
+          <button class="choice-btn" onclick="checkAnswer(this,'correct','q2')"><span class="choice-letter">C</span> Accessibility testing — text contrast and size were not verified for diverse learners.</button>
+          <button class="choice-btn" onclick="checkAnswer(this,'wrong','q2')"><span class="choice-letter">D</span> CoBlocks scripting — interactions were not programmed.</button>
+        </div>
+        <div id="fb-q2" class="feedback-msg correct">✅ <strong>Correct!</strong> Accessibility must be tested before deployment. CoSpaces text should use high-contrast colors and readable font sizes viewable at arm's length on a mobile screen.</div>
+        <div id="fb-q2-wrong" class="feedback-msg wrong">❌ <strong>Not quite.</strong> The issue is accessibility. Low-contrast, small text excludes learners with visual impairments. Step 5 of the design workflow requires checking text readability and contrast before sharing.</div>
+        <div class="quiz-nav">
+          <span id="quiz-score2">Question 2 of 3</span>
+          <button class="btn" id="next-q2" onclick="showQ(3)" disabled>Next →</button>
+        </div>
+      </div>
+
+      <!-- Q3 -->
+      <div id="q3" class="quiz-block" style="display:none;">
+        <div class="scenario-box">
+          <div class="scenario-label">Scenario 3 of 3</div>
+          <p>A teacher candidate wants students to explore the parts of a plant cell at their own pace. He is deciding between: (A) a single, linear slide presentation, or (B) a CoSpaces scene with clickable 3D cell organelles that each reveal a description and audio explanation. Which better supports the design principle of learner agency?</p>
+        </div>
+        <div class="choices">
+          <button class="choice-btn" onclick="checkAnswer(this,'wrong','q3')"><span class="choice-letter">A</span> The slide presentation, because it is easier to build.</button>
+          <button class="choice-btn" onclick="checkAnswer(this,'correct','q3')"><span class="choice-letter">B</span> The CoSpaces scene, because students control what they explore and when.</button>
+          <button class="choice-btn" onclick="checkAnswer(this,'wrong','q3')"><span class="choice-letter">C</span> Both are equally effective at promoting learner agency.</button>
+          <button class="choice-btn" onclick="checkAnswer(this,'wrong','q3')"><span class="choice-letter">D</span> Neither — learner agency requires in-person discussion.</button>
+        </div>
+        <div id="fb-q3" class="feedback-msg correct">✅ <strong>Correct!</strong> Interactive, branching experiences give learners control over their path through content — a key advantage of AR tools like CoSpaces over linear presentations.</div>
+        <div id="fb-q3-wrong" class="feedback-msg wrong">❌ <strong>Not quite.</strong> Learner agency means students choose their own path. A linear slide forces a single sequence; the CoSpaces scene lets students click on what interests them and explore independently.</div>
+        <div class="quiz-nav">
+          <span id="quiz-score3">Question 3 of 3</span>
+          <button class="btn" id="next-q3" onclick="finishQuiz()" disabled>Finish ✓</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- COMPLETION -->
+  <div id="completion">
+    <div class="trophy">🎓</div>
+    <h2>Module Complete!</h2>
+    <p>You've explored the key principles of AR lesson design in CoSpaces Edu. You're ready to begin planning your first AR-enhanced learning experience for your future classroom.</p>
+    <div class="cert-chip">CoSpaces Edu: AR Lesson Design Fundamentals ✔</div>
+    <p style="margin-top:24px; font-size:14px; opacity:.7;">Reuse this module freely — share the link with colleagues or embed it in your LMS course shell.</p>
+  </div>
+
+</main>
+
+<script>
+  /* ── Intersection Observer for scroll-reveal ── */
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.section').forEach(s => observer.observe(s));
+
+  /* ── Progress tracking ── */
+  const completed = new Set();
+  function markSection(n) {
+    completed.add(n);
+    updateBar();
+    if (n === 4) {
+      document.getElementById('completion').classList.add('show');
+      document.getElementById('completion').scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+  function updateBar() {
+    const pct = (completed.size / 4) * 100;
+    document.getElementById('bar').style.width = pct + '%';
+    document.getElementById('step-count').textContent = completed.size;
+  }
+
+  /* ── Principle toggle ── */
+  function togglePrinciple(el) {
+    el.classList.toggle('open');
+  }
+
+  /* ── Quiz logic ── */
+  let scores = { q1: null, q2: null, q3: null };
+
+  function checkAnswer(btn, result, qid) {
+    if (scores[qid] !== null) return; // already answered
+    scores[qid] = result;
+    const allBtns = btn.closest('.choices').querySelectorAll('.choice-btn');
+    allBtns.forEach(b => b.classList.add('disabled'));
+    btn.classList.add(result);
+
+    if (result === 'correct') {
+      document.getElementById('fb-' + qid).classList.add('show');
+      document.getElementById('next-' + qid).disabled = false;
+    } else {
+      document.getElementById('fb-' + qid + '-wrong').classList.add('show');
+      document.getElementById('next-' + qid).disabled = false;
+    }
+  }
+
+  function showQ(n) {
+    document.getElementById('q' + (n - 1)).style.display = 'none';
+    document.getElementById('q' + n).style.display = 'block';
+  }
+
+  function finishQuiz() {
+    document.getElementById('q3').style.display = 'none';
+    markSection(4);
+  }
+</script>
+</body>
+</html>
